@@ -65,11 +65,6 @@ void RunTask1(int episodes) {
 		std::cout << err.what() << std::endl;
 	}
 
-	std::vector<double> actions[3];
-	actions[0] = { 1,0,0 };
-	actions[1] = { 0,1,0 };
-	actions[2] = { 0,0,1 };
-
 	int start, end, center;
 	start = -100;
 
