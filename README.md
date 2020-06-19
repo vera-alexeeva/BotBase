@@ -31,6 +31,7 @@ center = start + (end - start) / 2;
 
 
 ```C++
+//center same as in task 1
 float angle;
 angle = asin((289.0 - center) / 190.14401)*(180/3.14159265358979323846);
 // arcsin((289.0 - center) / 190.14401))*(180/pi)
