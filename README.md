@@ -1,4 +1,4 @@
-# DOOM
+# DOOM openCV summer practice
 
 ### Task 1
 ![Demo CountPages alpha](https://j.gifs.com/1WOWLq.gif)
