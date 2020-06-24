@@ -184,74 +184,117 @@ void RunTask2(int episodes) {
 	std::cout << "result " << result / 10 << std::endl;
 }
 
-void RunTask3(int episodes)
-{
-
+void RunTask3(int episodes) {
 	float result = 0.0;
-	int counter = 0, r, c;
 
+	try
+	{
+		game->setWindowVisible(true);
+		game->setRenderWeapon(true);
+		game->loadConfig(path + "\\scenarios\\task3.cfg");
+		game->init();
+	}
+	catch (std::exception& err)
+	{
+		std::cout << err.what() << std::endl;
+	}
+
+	auto greyscale = cv::Mat(480, 640, CV_8UC1);
 	for (auto i = 0; i < episodes; i++)
 	{
+		int id = 0;
 		game->newEpisode();
-		std::cout « "Episode #" « i + 1 « std::endl;
-
+		std::cout << "Episode #" << i + 1 << " ";
+		int lastDis = 999999;
 		while (!game->isEpisodeFinished())
 		{
-
+			std::vector < cv::Point2f > centers;
+			cv::Mat clasters;
+			std::vector<int> FinDistance(6);
+			std::vector < cv::Point2f > FinCenters(6);
 			const auto& gamestate = game->getState();
-			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
+			std::vector <cv::Point2f> needs_point;
+			int minim = 99999999;
+			int index = 0;
 
-			cv::extractChannel(screenBuff, red, 0);
-			cv::threshold(red, red, 130, 255, cv::THRESH_BINARY);
-			cv::imshow("Output Window", red); 
-			while (counter == 0)
-			{
-				for (int i = 398; i > 0; i--)
+
+			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
+			cv::extractChannel(screenBuff, greyscale, 0);
+			cv::threshold(greyscale, greyscale, 134, 255, cv::THRESH_BINARY);
+			greyscale = greyscale(cv::Rect(0, 0, 640, 400));
+			cv::imshow("Output Window", greyscale);
+			cv::waitKey(sleepTime);
+
+			//делаем вектор из белых точек
+			for (int x = 0; x < (&greyscale)->cols; ++x) {
+				for (int y = 0; y < (&greyscale)->rows; ++y)
+					if (greyscale.at<unsigned char>(y, x) == 255) needs_point.push_back(cv::Point2f(x, y));
+			}
+			
+			//крутимся до нужного сектора
+			if (id >= 6 ) for (int j = 0; j < index; j++) double reward = game->makeAction({ 0,0,60,0 });
+
+			//кластерезируем
+			if (needs_point.size() >= 5)cv::kmeans(needs_point, 5, clasters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 1000, 1.0), 5, cv::KMEANS_RANDOM_CENTERS, centers);
+
+			//находим ближайшую аптечку в этом сигменте
+
+			for (int j = 0; j < centers.size(); ++j) {
+				int dis = distance(cvPoint(320, 1000), centers[j]);
+				if (dis < minim) {
+					minim = dis;
+					index = j;
+				}
+				if (id < 6) {
+					FinDistance.push_back(minim);
+					FinCenters.push_back(centers[index]);
+					double reward = game->makeAction({ 0,0,60,0 });
+					id++;
+				}
+			}
+			if (id == 6) {
+				//находим ближайшую из секторов
+				minim = 9999999;
+				for (int j = 0; j < 6; j++) {
+					if (FinDistance[j] < minim) {
+						minim = FinDistance[j];
+						index = j;
+					}
+				}
+				id++;
+			}
+			if (id > 6) {
+				int x = centers[index].x;
+				if (x < 300) {
+					double reward = game->makeAction({ 0,1,0,0 });
+				}
+				else if (x > 340) {
+					double reward = game->makeAction({ 1,0,0,0 });
+				}
+				else
 				{
-					for (int j = 0; j < 640; j++)
-					{
-						if (counter >= 10)
-						{
-							r = i;
-							c = j;
-							break;
-						}
-						else
-						{
-							if (red.at<uchar>(i, j) == (uchar)0xff) counter++;
-							if (red.at<uchar>(i, j) == (uchar)0) counter = 0;
-						}
+					if (lastDis > distance(cvPoint(320, 1000), centers[index]) ) {
+						lastDis = distance(cvPoint(320, 1000), centers[index]);
+						double reward = game->makeAction({ 0,0,0,1 });
 
 					}
-
-				} 
-				if (counter == 0) double reward = game->makeAction({ 0,0,90,0 });
-
-			}
-
-			double reward_ = game->makeAction({ 0,0,std::atan(abs(320-c)/r* (180 / 3.14159265358979323846)),0 });
-
-			double reward = 0;
-
-			while (reward == 0)
-			{
-
-				reward = game->makeAction({ 0,0,0,1 });
-				//std::cout « reward « std::endl;
+					else
+					{
+						lastDis = 999999;
+						id = 0;
+					}
+				}
 
 			}
-
-			//uchar px = screenBuff.at<uchar>(r, c);
 
 		}
 
-		std::cout « " reward " « game->getTotalReward() « std::endl;
+		std::cout << " reward " << game->getTotalReward() << std::endl;
 		result += game->getTotalReward();
-
-	} 
-	std::cout « "result " « result / episodes « std::endl;
-
+		std::cout << "resalt " << result / 10 << std::endl;
+	}
 }
+
 
 int main()
 {
