@@ -184,6 +184,75 @@ void RunTask2(int episodes) {
 	std::cout << "result " << result / 10 << std::endl;
 }
 
+void RunTask3(int episodes)
+{
+
+	float result = 0.0;
+	int counter = 0, r, c;
+
+	for (auto i = 0; i < episodes; i++)
+	{
+		game->newEpisode();
+		std::cout « "Episode #" « i + 1 « std::endl;
+
+		while (!game->isEpisodeFinished())
+		{
+
+			const auto& gamestate = game->getState();
+			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
+
+			cv::extractChannel(screenBuff, red, 0);
+			cv::threshold(red, red, 130, 255, cv::THRESH_BINARY);
+			cv::imshow("Output Window", red); 
+			while (counter == 0)
+			{
+				for (int i = 398; i > 0; i--)
+				{
+					for (int j = 0; j < 640; j++)
+					{
+						if (counter >= 10)
+						{
+							r = i;
+							c = j;
+							break;
+						}
+						else
+						{
+							if (red.at<uchar>(i, j) == (uchar)0xff) counter++;
+							if (red.at<uchar>(i, j) == (uchar)0) counter = 0;
+						}
+
+					}
+
+				} 
+				if (counter == 0) double reward = game->makeAction({ 0,0,90,0 });
+
+			}
+
+			double reward_ = game->makeAction({ 0,0,std::atan(abs(320-c)/r* (180 / 3.14159265358979323846)),0 });
+
+			double reward = 0;
+
+			while (reward == 0)
+			{
+
+				reward = game->makeAction({ 0,0,0,1 });
+				//std::cout « reward « std::endl;
+
+			}
+
+			//uchar px = screenBuff.at<uchar>(r, c);
+
+		}
+
+		std::cout « " reward " « game->getTotalReward() « std::endl;
+		result += game->getTotalReward();
+
+	} 
+	std::cout « "result " « result / episodes « std::endl;
+
+}
+
 int main()
 {
 	game->setViZDoomPath(path + "\\vizdoom.exe");
