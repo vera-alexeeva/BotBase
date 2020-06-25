@@ -1,7 +1,7 @@
 # DOOM openCV summer practice
 
 ### Task 1
-![Task 1](https://j.gifs.com/1WOWLq.gif "task 1")
+![Task 1](https://github.com/vera-alexeeva/BotBase/blob/master/Gifs/T1.gif "task 1")
 
 
 **Центр ищется по фиксированному у**
@@ -24,7 +24,7 @@ center = start + (end - start) / 2;
 
 
 ### Task 2
-![Task 2](https://j.gifs.com/oVoV5Y.gif "task 2")
+![Task 2](https://github.com/vera-alexeeva/BotBase/blob/master/Gifs/T2.gif "task 2")
 
 
 **Угол подобран методом тыка, и полученный коофицент используется для расчёта последующих углов**
@@ -37,7 +37,7 @@ angle = asin((289.0 - center) / 190.14401)*(180/3.14159265358979323846);
 // arcsin((289.0 - center) / 190.14401))*(180/pi)
 ```
 ### Task 3
-![Task 3]( "task 3")
+![Task 3](https://github.com/vera-alexeeva/BotBase/blob/master/Gifs/T3.gif "task 3")
 
 
 **Через кластеризцию находим аптечки. Находим ближайшую и двигаемся к ней повторяем с начала иначе крутимся на 60 градусов**
