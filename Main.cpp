@@ -205,22 +205,18 @@ void RunTask3(int episodes) {
 		int id = 0;
 		game->newEpisode();
 		std::cout << "Episode #" << i + 1 << " ";
-		int lastDis = 999999;
 		while (!game->isEpisodeFinished())
 		{
+			std::cout << id << std::endl;
 			std::vector < cv::Point2f > centers;
 			cv::Mat clasters;
-			std::vector<int> FinDistance(6);
-			std::vector < cv::Point2f > FinCenters(6);
 			const auto& gamestate = game->getState();
 			std::vector <cv::Point2f> needs_point;
-			int minim = 99999999;
-			int index = 0;
-
+			int index;
 
 			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
 			cv::extractChannel(screenBuff, greyscale, 0);
-			cv::threshold(greyscale, greyscale, 134, 255, cv::THRESH_BINARY);
+			cv::threshold(greyscale, greyscale, 140, 255, cv::THRESH_BINARY);
 			greyscale = greyscale(cv::Rect(0, 0, 640, 400));
 			cv::imshow("Output Window", greyscale);
 			cv::waitKey(sleepTime);
@@ -230,68 +226,51 @@ void RunTask3(int episodes) {
 				for (int y = 0; y < (&greyscale)->rows; ++y)
 					if (greyscale.at<unsigned char>(y, x) == 255) needs_point.push_back(cv::Point2f(x, y));
 			}
-			
-			//крутимся до нужного сектора
-			if (id >= 6 ) for (int j = 0; j < index; j++) double reward = game->makeAction({ 0,0,60,0 });
 
 			//кластерезируем
-			if (needs_point.size() >= 5)cv::kmeans(needs_point, 5, clasters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 1000, 1.0), 5, cv::KMEANS_RANDOM_CENTERS, centers);
+			if (needs_point.size() >= 5) {
+				cv::kmeans(needs_point, 5, clasters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 1000, 1.0), 5, cv::KMEANS_RANDOM_CENTERS, centers);
 
-			//находим ближайшую аптечку в этом сигменте
 
-			for (int j = 0; j < centers.size(); ++j) {
-				int dis = distance(cvPoint(320, 1000), centers[j]);
-				if (dis < minim) {
-					minim = dis;
-					index = j;
-				}
-				if (id < 6) {
-					FinDistance.push_back(minim);
-					FinCenters.push_back(centers[index]);
-					double reward = game->makeAction({ 0,0,60,0 });
-					id++;
-				}
-			}
-			if (id == 6) {
-				//находим ближайшую из секторов
-				minim = 9999999;
-				for (int j = 0; j < 6; j++) {
-					if (FinDistance[j] < minim) {
-						minim = FinDistance[j];
+
+				//находим ближайшую аптечку в этом сигменте
+				int minim = 999999;
+				for (int j = 0; j < centers.size(); ++j) {
+					int dis = distance(cvPoint(320, 1000), centers[j]);
+					if (dis < minim) {
+						minim = dis;
 						index = j;
 					}
 				}
-				id++;
-			}
-			if (id > 6) {
+				//движемся к аптеке
+
 				int x = centers[index].x;
 				if (x < 300) {
-					double reward = game->makeAction({ 0,1,0,0 });
+					double reward = game->makeAction({ 1,0,0,0 });
 				}
 				else if (x > 340) {
-					double reward = game->makeAction({ 1,0,0,0 });
+					double reward = game->makeAction({ 0,1,0,0 });
 				}
 				else
 				{
-					if (lastDis > distance(cvPoint(320, 1000), centers[index]) ) {
-						lastDis = distance(cvPoint(320, 1000), centers[index]);
-						double reward = game->makeAction({ 0,0,0,1 });
-
-					}
-					else
-					{
-						lastDis = 999999;
-						id = 0;
-					}
+					double reward = game->makeAction({ 0,0,0,1 });
 				}
-
 			}
+			else {
+				double reward = game->makeAction({ 0,0,60,0 });
+			}
+
+
+			greyscale.convertTo(greyscale, CV_32F);
+			greyscale.convertTo(greyscale, CV_8UC3);
+			cv::waitKey(20);
 
 		}
 
 		std::cout << " reward " << game->getTotalReward() << std::endl;
 		result += game->getTotalReward();
 		std::cout << "resalt " << result / 10 << std::endl;
+
 	}
 }
 
