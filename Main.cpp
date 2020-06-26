@@ -278,6 +278,164 @@ void RunTask3(int episodes) {
 	}
 }
 
+void RunTask5(int episodes) {
+	float result = 0.0;
+
+	try
+	{
+		game->setWindowVisible(true);
+		game->setRenderWeapon(true);
+		game->loadConfig(path + "\\scenarios\\task5.cfg");
+		game->init();
+	}
+	catch (std::exception& err)
+	{
+		std::cout << err.what() << std::endl;
+	}
+
+	auto greyscale = cv::Mat(480, 640, CV_8UC1);
+	auto greyscale2 = cv::Mat(480, 640, CV_8UC1);
+	for (auto i = 0; i < episodes; i++)
+	{
+		int id = 0;
+		float Left;
+		float Right;
+		int LeftCount;
+		int RightCount;
+
+		int RightWall;
+		int LeftWall;
+		game->newEpisode();
+		std::cout << "Episode #" << i + 1 << " ";
+		while (!game->isEpisodeFinished())
+		{
+			std::vector < cv::Point2f > centers;
+			cv::Mat clasters;
+			const auto& gamestate = game->getState();
+			std::vector <cv::Point2f> needs_point;
+			int index;
+
+			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
+			cv::GaussianBlur(greyscale, greyscale, cv::Size(21, 21), 0, 0);
+			cv::extractChannel(screenBuff, greyscale, 2);
+			cv::threshold(greyscale, greyscale, 230, 255, cv::THRESH_BINARY);
+			greyscale = greyscale(cv::Rect(0, 0, 640, 400));
+			
+			std::vector < cv::Point2f > centers2;
+			cv::Mat clasters2;
+			std::vector <cv::Point2f> needs_point2;
+			
+			std::memcpy(screenBuff.data, gamestate->screenBuffer->data(), gamestate->screenBuffer->size());
+			cv::GaussianBlur(greyscale2, greyscale2, cv::Size(21, 21), 0, 0);
+			cv::extractChannel(screenBuff, greyscale2, 2);
+			cv::threshold(greyscale2, greyscale2, 130, 255, cv::THRESH_BINARY);
+			greyscale2 = greyscale2(cv::Rect(0, 0, 640, 400));
+
+			//делаем вектор из белых точек
+			for (int x = 0; x < (&greyscale)->cols; ++x) {
+				for (int y = 0; y < (&greyscale)->rows; ++y) {
+					if (greyscale.at<unsigned char>(y, x) == 255) needs_point.push_back(cv::Point2f(x, y));
+					if (greyscale2.at<unsigned char>(y, x) == 255) needs_point2.push_back(cv::Point2f(x, y));
+				}
+			}
+
+			if (needs_point.size() >= 5)
+				cv::kmeans(needs_point, 5, clasters, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 1000, 1.0), 10, cv::KMEANS_RANDOM_CENTERS, centers);
+			cv::kmeans(needs_point2, 2, clasters2, cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 1000, 1.0), 10, cv::KMEANS_RANDOM_CENTERS, centers2);
+
+			index = 0;
+			int minim = 999999;
+			for (int j = 0; j < centers.size(); ++j) {
+				int dis = distance(cvPoint(centers[j].x, 480), centers[j]);
+				if (dis < minim) {
+					minim = dis;
+					index = j;
+				}
+			}
+			if (needs_point.size() >= 5) {
+				cv::Rect rect(centers[index].x, centers[index].y, 20, 20);
+				cv::rectangle(greyscale, rect, cv::Scalar(0, 255, 0));
+			}
+			Left = 0.0;
+			Right = 0.0;
+			LeftCount = 0;
+			RightCount = 0;
+			for (int j = 0; j < centers.size(); j++) {
+				if (j!=index) {
+					if (centers[j].x < centers[index].x) {
+						Left += distance(cvPoint(centers[j].x, 480), centers[j]);
+					}
+					else
+					{
+						Right += distance(cvPoint(centers[j].x, 480), centers[j]);
+					}
+				}
+			}
+			Left /= LeftCount;
+			Right /= RightCount;
+
+
+			//не у стены ли мы????
+			LeftWall = 320;
+			RightWall = 320;
+			for (int j = 0; j < centers2.size(); j++) {
+				if (centers2[j].x > LeftWall) LeftWall = centers2[j].x;
+				if (centers2[j].x > RightWall) RightWall = centers2[j].x;
+			}
+			if (minim <= 290 ) {
+				if (centers[index].x<=200) {
+					double reward = game->makeAction({ 0,1 }); //двигаемся вправо
+
+				}
+				else if (centers[index].x >= 440)
+				{
+					double reward = game->makeAction({ 1,0 }); //двигаемся влево
+				}
+				else {
+					if (Left > Right) {
+						double reward = game->makeAction({ 0,1 });
+					}
+					else if (Left < Right)
+					{
+						double reward = game->makeAction({ 1,0 });
+					}
+					else
+					{
+						if (centers[index].x < 330) {
+							double reward = game->makeAction({ 0,1 }); //двигаемся вправо
+
+						}
+						else if (centers[index].x >= 330)
+						{
+							double reward = game->makeAction({ 1,0 }); //двигаемся влево
+						}
+					}
+				}
+			}
+			else
+			{
+				if (LeftWall > 530) double reward = game->makeAction({ 1,0 });
+				if (RightWall < 110) double reward = game->makeAction({ 0,1});
+				double reward = game->makeAction({ 0,0 });
+			}
+			double reward = game->makeAction({ 0,0 });
+			cv::imshow("Output Window", greyscale);
+			greyscale.convertTo(greyscale, CV_32F);
+			greyscale.convertTo(greyscale, CV_8UC3);
+
+			cv::imshow("Output Window2", greyscale2);
+			greyscale.convertTo(greyscale2, CV_32F);
+			greyscale.convertTo(greyscale2, CV_8UC3);
+			cv::waitKey(sleepTime);
+
+		}
+
+		std::cout << " reward " << game->getTotalReward() << std::endl;
+		result += game->getTotalReward();
+		std::cout << "resalt " << result / 10 << std::endl;
+
+	}
+}
 
 int main()
 {
