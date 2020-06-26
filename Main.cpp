@@ -371,8 +371,10 @@ void RunTask5(int episodes) {
 					}
 				}
 			}
-			Left /= LeftCount;
-			Right /= RightCount;
+			if (LeftCount != 0)Left /= LeftCount;
+			else Left = 0;
+			if (RightCount != 0)Right /= RightCount;
+			else Right = 0;
 
 
 			//не у стены ли мы????
