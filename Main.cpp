@@ -12,6 +12,10 @@ auto screenBuff = cv::Mat(480, 640, CV_8UC3);
 unsigned int sleepTime = 30;
 std::string path = "C:\\practice\\vizdoom";
 
+// функция подсчёта растояния между двумя точками
+int distance(const cv::Point2f& a, const cv::Point2f& b) {
+	return round(sqrt(pow(abs(a.x - b.x), 2) + pow(abs(a.y - b.y), 2)));
+}
 
 void RunTaskTest(int episodes) {
 
