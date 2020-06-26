@@ -77,6 +77,12 @@ else {
 Делаем графф карты и через match templay обходим яд и собираем аптечки графом ходим по карте снижая веса в комнатах где мы не были
 ### Task 5
 ![Task 2](https://github.com/vera-alexeeva/BotBase/blob/master/Gifs/t5.gif "task 5")
+**Через два threshold делаем ещё grayscale с помощью которой мы проверяем местоположение стены**
+```c++
+if (LeftWall > 530) double reward = game->makeAction({ 1,0 });
+if (RightWall < 110) double reward = game->makeAction({ 0,1});
+double reward = game->makeAction({ 0,0 });
+```
 Через кластеризацию находим снаряды и двигаемся в ту сторону где снарпяды дальше, если у нас перед лицом собственно есть снаряд
 ### Task 6
 Пинки находим через match templay стреляем в них уворачиваемся от фаерболов аналогично 4
